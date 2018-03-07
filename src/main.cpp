@@ -99,12 +99,11 @@ int main() {
           *
           */
 
-          
           // ptsx and ptsy are the path to follow
           // px, py, psi, v describing the host vehicle state
           auto localpath_x = Eigen::VectorXd(ptsx.size());
           auto localpath_y = Eigen::VectorXd(ptsy.size());
-          
+
           for (auto i = 0; i < ptsx.size(); ++i) {
             // translation and then rotation
             double dx = ptsx[i] - px;
@@ -114,34 +113,6 @@ int main() {
           }
 
           auto coeffs = polyfit(localpath_x, localpath_y, 3);
-          
-/*
-          vector<double> waypoints_x;
-          vector<double> waypoints_y;
-
-          // transform waypoints to be from car's perspective
-          // this means we can consider px = 0, py = 0, and psi = 0
-          // greatly simplifying future calculations
-          for (int i = 0; i < ptsx.size(); i++) {
-            double dx = ptsx[i] - px;
-            double dy = ptsy[i] - py;
-            waypoints_x.push_back(dx * cos(-psi) - dy * sin(-psi));
-            waypoints_y.push_back(dx * sin(-psi) + dy * cos(-psi));
-          }
-
-          double* ptrx = &waypoints_x[0];
-          double* ptry = &waypoints_y[0];
-          Eigen::Map<Eigen::VectorXd> waypoints_x_eig(ptrx, 6);
-          Eigen::Map<Eigen::VectorXd> waypoints_y_eig(ptry, 6);
-
-          auto coeffs = polyfit(waypoints_x_eig, waypoints_y_eig, 3);
-
-*/
-
-
-
-
-
 
           auto cte = polyeval(coeffs, 0);
           auto epsi = -atan(coeffs[1]);
@@ -152,11 +123,11 @@ int main() {
           Eigen::VectorXd state(6);
           state << 0, 0, 0, v, cte, epsi;
           auto vars = mpc.Solve(state, coeffs);
-          
+
           // Solution is calculated mathematically correct
           // However simultion needs steer values where clockwise
           // means positive. Therefore "*-1.0"
-          steer_value = -1.0*vars[0];
+          steer_value = -1.0 * vars[0];
           throttle_value = vars[1];
 
           json msgJson;
@@ -174,13 +145,11 @@ int main() {
           // vars hold the return value of Solve call
           // element 2 is x0 element 3 is y0 element 4 is x1 element 5 is y1 ...
 
-          for (auto i = 2; i < vars.size(); ++i)
-          {
-            if (i%2 == 0) // even: x
+          for (auto i = 2; i < vars.size(); ++i) {
+            if (i % 2 == 0)  // even: x
             {
               mpc_x_vals.push_back(vars[i]);
-            }
-            else          // odd: y
+            } else  // odd: y
             {
               mpc_y_vals.push_back(vars[i]);
             }
