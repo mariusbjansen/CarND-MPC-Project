@@ -6,8 +6,8 @@
 using CppAD::AD;
 
 // TODO: Set the timestep length and duration
-size_t N = 25;
-double dt = 0.05;
+size_t N = 10;
+double dt = 0.1;
 
 // This value assumes the model presented in the classroom is used.
 //
@@ -57,29 +57,26 @@ class FG_eval {
 
     // The part of the cost based on the reference state.
     for (int t = 0; t < N; t++) {
-      fg[0] += CppAD::pow(vars[cte_start + t], 2);
-      fg[0] += CppAD::pow(vars[epsi_start + t], 2);
+      fg[0] += 5000*CppAD::pow(vars[cte_start + t], 2);
+      fg[0] += 2500*CppAD::pow(vars[epsi_start + t], 2);
       fg[0] += CppAD::pow(vars[v_start + t] - ref_v, 2);
     }
 
     // Minimize the use of actuators.
     for (int t = 0; t < N - 1; t++) {
-      fg[0] += CppAD::pow(vars[delta_start + t], 2);
+      fg[0] += 1500*CppAD::pow(vars[delta_start + t], 2);
       fg[0] += CppAD::pow(vars[a_start + t], 2);
+
     }
 
     // Minimize the value gap between sequential actuations.
     for (int t = 0; t < N - 2; t++) {
-      fg[0] += CppAD::pow(vars[delta_start + t + 1] - vars[delta_start + t], 2);
+      fg[0] += 5000*CppAD::pow(vars[delta_start + t + 1] - vars[delta_start + t], 2);
       fg[0] += CppAD::pow(vars[a_start + t + 1] - vars[a_start + t], 2);
     }
 
     //
-    // Setup Constraints
-    //
-    // NOTE: In this section you'll setup the model constraints.
-
-    // Initial constraints
+    // Setup Constraintsfg[0] += 700*CppAD::pow(vars[delta_start + i] * vars[v_start+i], 2);    // Initial constraints
     //
     // We add 1 to each of the starting indices due to cost being located at
     // index 0 of `fg`.
@@ -112,6 +109,20 @@ class FG_eval {
       // Only consider the actuation at time t.
       AD<double> delta0 = vars[delta_start + t - 1];
       AD<double> a0 = vars[a_start + t - 1];
+
+
+    /*
+
+      // incorporate latency
+      // hint taken from my tutor by referncing the solution of
+      // https://github.com/jeremy-shannon/CarND-MPC-Project/blob/master/src/MPC.cpp
+
+      if (t > 1) {   // use previous actuations (to account for latency)
+        a0 = vars[a_start + t - 2];
+        delta0 = vars[delta_start + t - 2];
+      }
+
+    */
 
       AD<double> f0 = coeffs[0] + coeffs[1] * x0;
       AD<double> psides0 = CppAD::atan(coeffs[1]);
@@ -264,10 +275,21 @@ vector<double> MPC::Solve(Eigen::VectorXd x0, Eigen::VectorXd coeffs) {
   auto cost = solution.obj_value;
   std::cout << "Cost " << cost << std::endl;
 
-  // TODO: Return the first actuator values. The variables can be accessed with
-  // `solution.x[i]`.
-  //
-  // {...} is shorthand for creating a vector, so auto x1 = {1.0,2.0}
-  // creates a 2 element double vector.
-  return {-solution.x[delta_start], solution.x[a_start]};
+  // return value ret
+  // element 0: steering value
+  // element 1: acceleration value
+  // element 2...end: path of x and y points (for visualization)
+
+  vector<double> ret;
+
+  ret.push_back(solution.x[delta_start]);
+  ret.push_back(solution.x[a_start]);
+  
+  for(auto i=0; i<N-1; ++i)
+  {
+    ret.push_back(solution.x[x_start+i+1]);
+    ret.push_back(solution.x[y_start+i+1]);
+  }
+
+  return ret;
 }
