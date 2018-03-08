@@ -92,12 +92,8 @@ int main() {
           double psi = j[1]["psi"];
           double v = j[1]["speed"];
 
-          /*
-          * TODO: Calculate steering angle and throttle using MPC.
-          *
-          * Both are in between [-1, 1].
-          *
-          */
+          // DONE: Calculate steering angle and throttle using MPC.
+          // Both are in between [-1, 1].
 
           // ptsx and ptsy are the path to follow
           // px, py, psi, v describing the host vehicle state
@@ -114,7 +110,9 @@ int main() {
 
           auto coeffs = polyfit(localpath_x, localpath_y, 3);
 
+          // cross track errror cte
           auto cte = polyeval(coeffs, 0);
+          // error in orientation error psi
           auto epsi = -atan(coeffs[1]);
 
           double steer_value;
@@ -125,8 +123,11 @@ int main() {
           auto vars = mpc.Solve(state, coeffs);
 
           // Solution is calculated mathematically correct
-          // However simultion needs steer values where clockwise
-          // means positive. Therefore "*-1.0"
+          // However simultion needs different steering values
+          // clockwise turning is positive in the simulation.
+          // mathematically correct clockwise turning is negative.
+          // Therefore "*-1.0"
+          // vars hold the return value of mpc.Solve call
           steer_value = -1.0 * vars[0];
           throttle_value = vars[1];
 
@@ -142,8 +143,10 @@ int main() {
           vector<double> mpc_x_vals;
           vector<double> mpc_y_vals;
 
-          // vars hold the return value of Solve call
-          // element 2 is x0 element 3 is y0 element 4 is x1 element 5 is y1 ...
+          // Visualization
+          // vars hold the return value of mpc.Solve call
+          // element 2 is x0, element 3 is y0, element 4 is x1, element 5 is y1
+          // ...
 
           for (auto i = 2; i < vars.size(); ++i) {
             if (i % 2 == 0)  // even: x
