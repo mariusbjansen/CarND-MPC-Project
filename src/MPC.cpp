@@ -6,7 +6,7 @@
 using CppAD::AD;
 
 // TODO: Set the timestep length and duration
-size_t N = 25;
+size_t N = 12;
 double dt = 0.1;
 
 // This value assumes the model presented in the classroom is used.
@@ -57,20 +57,20 @@ class FG_eval {
 
     // The part of the cost based on the reference state.
     for (uint t = 0; t < N; t++) {
-      fg[0] += 500 * CppAD::pow(vars[cte_start + t], 2);
-      fg[0] += 500 * CppAD::pow(vars[epsi_start + t], 2);
-      fg[0] +=  CppAD::pow(vars[v_start + t] - ref_v, 2);
+      fg[0] += 500*CppAD::pow(vars[cte_start + t], 2);
+      fg[0] += 500*CppAD::pow(vars[epsi_start + t], 2);
+      fg[0] += CppAD::pow(vars[v_start + t] - ref_v, 2);
     }
 
     // Minimize the use of actuators.
     for (uint t = 0; t < N - 1; t++) {
-      fg[0] += 10 * CppAD::pow(vars[delta_start + t], 2);
+      fg[0] += 10*CppAD::pow(vars[delta_start + t], 2);
       fg[0] += CppAD::pow(vars[a_start + t], 2);
     }
 
     // Minimize the value gap between sequential actuations.
     for (uint t = 0; t < N - 2; t++) {
-      fg[0] += 100 *
+      fg[0] += 500 *
                CppAD::pow(vars[delta_start + t + 1] - vars[delta_start + t], 2);
       fg[0] += CppAD::pow(vars[a_start + t + 1] - vars[a_start + t], 2);
     }
@@ -121,8 +121,11 @@ class FG_eval {
         delta0 = vars[delta_start + t - 2];
       }
 
-      AD<double> f0 = coeffs[0] + coeffs[1] * x0;
-      AD<double> psides0 = CppAD::atan(coeffs[1]);
+      // the path to follow is now a third order polynomial and not a straight line 
+      // OMG & LOL how long did it take me to find this?!
+      AD<double> f0 = coeffs[0] + coeffs[1] * x0 + coeffs[2]*x0*x0 + coeffs[3]*x0*x0*x0;
+      // We need to take the derivative of the formula above in the argument of the arc tan
+      AD<double> psides0 = CppAD::atan(coeffs[1] + 2*coeff[2]*x0 + 3 * coeffs[3]*x0*x0);
 
       fg[1 + x_start + t] = x1 - (x0 + v0 * CppAD::cos(psi0) * dt);
       fg[1 + y_start + t] = y1 - (y0 + v0 * CppAD::sin(psi0) * dt);
