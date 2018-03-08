@@ -169,11 +169,10 @@ int main() {
           vector<double> next_x_vals;
           vector<double> next_y_vals;
 
-          for (auto i=0; i<ptsx.size(); ++i) {
+          for (auto i = 0; i < ptsx.size(); ++i) {
             next_x_vals.push_back(localpath_x(i));
             next_y_vals.push_back(localpath_y(i));
           }
-
 
           //.. add (x,y) points to list here, points are in reference to the
           // vehicle's coordinate system
