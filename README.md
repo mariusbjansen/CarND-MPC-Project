@@ -12,4 +12,4 @@ A lot of ideas and even code from the lesson *20: Model Predictive Control* can 
 
 ### Student describes their model in detail. This includes the state, actuators and update equations.
 
-![](./simple.svg | width=640)
+<img src="simple.svg" width="640" alt="Formulas" />
