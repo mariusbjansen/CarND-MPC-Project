@@ -1,0 +1,13 @@
+\documentclass[12pt]{minimal}
+\usepackage{amsmath}
+
+\begin{document}
+\begin{align*} 
+x_{t+1} &= x_t + v_t \cdot \cos{\psi_t} \cdot dt \\
+y_{t+1} &= y_t + v_t \cdot \sin{\psi_t} \cdot dt \\
+\psi_{t+1} &= \psi_t + \frac{v_t}{L_f} \cdot \delta_t \cdot dt \\
+v_{t+1} &= v_t + a_t \cdot dt \\
+cte_{t+1} &= f(x_t)-y_t+v_t \cdot \sin{e\psi_t} \cdot dt \\
+e\psi_{t+1} &= \psi_t - \psi des_t + \frac{v_t}{L_f} \cdot \delta_t \cdot dt \\
+\end{align*}
+\end{document}
