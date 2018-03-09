@@ -100,7 +100,7 @@ int main() {
           auto localpath_x = Eigen::VectorXd(ptsx.size());
           auto localpath_y = Eigen::VectorXd(ptsy.size());
 
-          for (auto i = 0; i < ptsx.size(); ++i) {
+          for (uint i = 0; i < ptsx.size(); ++i) {
             // translation and then rotation
             double dx = ptsx[i] - px;
             double dy = ptsy[i] - py;
@@ -148,7 +148,7 @@ int main() {
           // element 2 is x0, element 3 is y0, element 4 is x1, element 5 is y1
           // ...
 
-          for (auto i = 2; i < vars.size(); ++i) {
+          for (uint i = 2; i < vars.size(); ++i) {
             if (i % 2 == 0)  // even: x
             {
               mpc_x_vals.push_back(vars[i]);
@@ -169,7 +169,7 @@ int main() {
           vector<double> next_x_vals;
           vector<double> next_y_vals;
 
-          for (auto i = 0; i < ptsx.size(); ++i) {
+          for (uint i = 0; i < ptsx.size(); ++i) {
             next_x_vals.push_back(localpath_x(i));
             next_y_vals.push_back(localpath_y(i));
           }
