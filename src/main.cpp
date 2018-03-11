@@ -17,6 +17,11 @@ constexpr double pi() { return M_PI; }
 double deg2rad(double x) { return x * pi() / 180; }
 double rad2deg(double x) { return x * 180 / pi(); }
 
+// Kinematic parameters
+const double Lf = 2.67;
+// Latency in the system
+const double latency = 0.1;
+
 // Checks if the SocketIO event has JSON data.
 // If there is data the JSON object in string format will be returned,
 // else the empty string "" will be returned.
@@ -91,6 +96,8 @@ int main() {
           double py = j[1]["y"];
           double psi = j[1]["psi"];
           double v = j[1]["speed"];
+          double delta = j[1]["steering_angle"];
+          double a = j[1]["throttle"];
 
           // DONE: Calculate steering angle and throttle using MPC.
           // Both are in between [-1, 1].
@@ -110,16 +117,43 @@ int main() {
 
           auto coeffs = polyfit(localpath_x, localpath_y, 3);
 
-          // cross track errror cte
-          auto cte = polyeval(coeffs, 0);
-          // error in orientation error psi
-          auto epsi = -atan(coeffs[1]);
+          // Kinematic model relatively from t=0
+          // x0: position in x
+          // y0: position in y
+          // psi0: orientation
+          // cte0: cross track errror
+          // epsi0: error in orientation error epsi
+          const double x0 = 0;
+          const double y0 = 0;
+          const double psi0 = 0;
+          const double cte0 = coeffs[0];
+          const double epsi0 = -atan(coeffs[1]);
 
-          double steer_value;
-          double throttle_value;
+          // velocity from mph to m/s SI unit
+          v *= 0.447;
+
+          double x_delay = x0;
+          double y_delay = y0;
+          double psi_delay = psi0;
+          double v_delay = v;
+          double cte_delay = cte0;
+          double epsi_delay = epsi0;
+
+          bool compensate = true;
+          // --- latency handling ---
+          // if compensation is true, the solver won't get the current state
+          // but the future state after latency
+          if (compensate) {
+            x_delay = x0 + v * cos(psi0) * latency;
+            y_delay = y0 + v * sin(psi0) * latency;
+            psi_delay = psi0 - v * delta * latency / Lf;
+            v_delay = v + a * latency;
+            cte_delay = cte0 + v * sin(epsi0) * latency;
+            epsi_delay = epsi0 - v * delta * latency / Lf;
+          }
 
           Eigen::VectorXd state(6);
-          state << 0, 0, 0, v, cte, epsi;
+          state << x_delay, y_delay, psi_delay, v_delay, cte_delay, epsi_delay;
           auto vars = mpc.Solve(state, coeffs);
 
           // Solution is calculated mathematically correct
@@ -128,15 +162,15 @@ int main() {
           // mathematically correct clockwise turning is negative.
           // Therefore "*-1.0"
           // vars hold the return value of mpc.Solve call
-          steer_value = -1.0 * vars[0];
-          throttle_value = vars[1];
+          double steer_value = -1.0 * vars[0];
+          double throttle_value = vars[1];
 
           json msgJson;
           // NOTE: Remember to divide by deg2rad(25) before you send the
           // steering value back.
           // Otherwise the values will be in between [-deg2rad(25), deg2rad(25]
           // instead of [-1, 1].
-          msgJson["steering_angle"] = steer_value;
+          msgJson["steering_angle"] = steer_value/deg2rad(25);
           msgJson["throttle"] = throttle_value;
 
           // Display the MPC predicted trajectory
@@ -192,7 +226,8 @@ int main() {
           //
           // NOTE: REMEMBER TO SET THIS TO 100 MILLISECONDS BEFORE
           // SUBMITTING.
-          this_thread::sleep_for(chrono::milliseconds(100));
+          this_thread::sleep_for(
+              chrono::milliseconds(static_cast<uint>(latency * 1000)));
           ws.send(msg.data(), msg.length(), uWS::OpCode::TEXT);
         }
       } else {
